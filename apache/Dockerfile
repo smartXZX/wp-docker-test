@@ -1,6 +1,9 @@
 FROM php:5.6-apache
 
-RUN a2enmod rewrite
+RUN touch /usr/local/etc/php/conf.d/upload-limit.ini \
+	&& echo "upload_max_filesize = 32M" >> /usr/local/etc/php/conf.d/upload-limit.ini \
+	&& echo "post_max_size = 32M" >> /usr/local/etc/php/conf.d/upload-limit.ini
+RUN a2enmod rewrite expires headers
 
 # install the PHP extensions we need
 RUN apt-get update && apt-get install -y libpng12-dev libjpeg-dev && rm -rf /var/lib/apt/lists/* \
@@ -18,8 +21,11 @@ ENV WORDPRESS_SHA1 d3a70d0f116e6afea5b850f793a81a97d2115039
 RUN curl -o wordpress.tar.gz -SL https://wordpress.org/wordpress-${WORDPRESS_UPSTREAM_VERSION}.tar.gz \
 	&& echo "$WORDPRESS_SHA1 *wordpress.tar.gz" | sha1sum -c - \
 	&& tar -xzf wordpress.tar.gz -C /usr/src/ \
-	&& rm wordpress.tar.gz \
+	&& rm wordpress.tar.gz \ 
 	&& chown -R www-data:www-data /usr/src/wordpress
+
+
+RUN apt-get update && apt-get install -y unzip rsync && rm -r /var/lib/apt/lists/*
 
 COPY docker-entrypoint.sh /entrypoint.sh
 
